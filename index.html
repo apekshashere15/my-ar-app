@@ -1,251 +1,200 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebXR Hit-Test AR</title>
+    <title>AR.js Marker-Based AR</title>
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
     <style>
         body {
             margin: 0;
-            font-family: Arial, sans-serif;
             overflow: hidden;
-        }
-        
-        #container {
-            width: 100vw;
-            height: 100vh;
-            position: relative;
         }
         
         #info {
             position: absolute;
-            top: 20px;
-            left: 20px;
+            top: 10px;
+            left: 10px;
             background: rgba(0, 0, 0, 0.7);
             color: white;
             padding: 15px;
             border-radius: 10px;
+            font-family: Arial, sans-serif;
             font-size: 14px;
-            z-index: 1000;
-            max-width: 300px;
+            z-index: 9999;
+            max-width: 90%;
         }
         
-        #startButton {
+        #instructions {
             position: absolute;
-            bottom: 40px;
+            bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
-            padding: 15px 30px;
-            background: #4CAF50;
+            background: rgba(0, 0, 0, 0.8);
             color: white;
-            border: none;
-            border-radius: 25px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            z-index: 1000;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            padding: 15px 25px;
+            border-radius: 20px;
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+            z-index: 9999;
+            text-align: center;
         }
         
-        #startButton:hover {
-            background: #45a049;
+        .arjs-loader {
+            height: 100%;
+            width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 9998;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
-        
-        #startButton:disabled {
-            background: #cccccc;
-            cursor: not-allowed;
-        }
-        
-        .hidden {
-            display: none;
+
+        .arjs-loader div {
+            text-align: center;
+            font-size: 1.25em;
+            color: white;
+            font-family: Arial, sans-serif;
         }
     </style>
 </head>
-<body>
-    <div id="container">
-        <div id="info">
-            <h3>WebXR Surface Placement AR</h3>
-            <p id="status">Checking WebXR support...</p>
+<body style="margin: 0; overflow: hidden;">
+    <div class="arjs-loader">
+        <div>
+            <h2>📷 Loading AR Camera...</h2>
+            <p>Please allow camera access</p>
         </div>
-        <button id="startButton" class="hidden">Start AR</button>
     </div>
 
-    <script type="module">
-        import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.min.js';
+    <div id="info">
+        <h3>🎯 Marker-Based AR</h3>
+        <p>Point camera at Hiro marker to see 3D objects!</p>
+    </div>
 
-        let scene, camera, renderer;
-        let xrSession = null;
-        let xrRefSpace = null;
-        let hitTestSource = null;
-        let reticle;
-        let cubes = [];
+    <div id="instructions">
+        👇 Print Hiro marker or open on another screen
+    </div>
+
+    <!-- A-Frame AR Scene -->
+    <a-scene
+        embedded
+        arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
+        vr-mode-ui="enabled: false"
+        renderer="logarithmicDepthBuffer: true; precision: medium;">
         
-        const statusEl = document.getElementById('status');
-        const startButton = document.getElementById('startButton');
+        <!-- Camera -->
+        <a-entity camera></a-entity>
 
-        // Check WebXR support
-        async function checkARSupport() {
-            if (!navigator.xr) {
-                statusEl.textContent = '❌ WebXR not supported on this browser';
-                return false;
-            }
+        <!-- Marker 1: Hiro - Rotating Cube -->
+        <a-marker preset="hiro">
+            <!-- Colorful rotating cube -->
+            <a-box 
+                position="0 0.5 0" 
+                rotation="0 45 0"
+                color="#FF6B6B"
+                animation="property: rotation; to: 0 405 0; loop: true; dur: 3000; easing: linear">
+            </a-box>
+            
+            <!-- Smaller cube on top -->
+            <a-box 
+                position="0 1.2 0" 
+                scale="0.5 0.5 0.5"
+                color="#4ECDC4"
+                animation="property: rotation; to: 360 0 360; loop: true; dur: 2000; easing: linear">
+            </a-box>
+            
+            <!-- Sphere -->
+            <a-sphere
+                position="1 0.75 0"
+                radius="0.3"
+                color="#FFE66D"
+                animation="property: position; to: 1 1.2 0; dir: alternate; loop: true; dur: 1000; easing: easeInOutQuad">
+            </a-sphere>
+            
+            <!-- Cylinder -->
+            <a-cylinder
+                position="-1 0.5 0"
+                radius="0.3"
+                height="1"
+                color="#95E1D3"
+                animation="property: scale; to: 1 1.5 1; dir: alternate; loop: true; dur: 1500; easing: easeInOutQuad">
+            </a-cylinder>
+            
+            <!-- Text label -->
+            <a-text
+                value="Hello AR!"
+                position="0 1.8 0"
+                align="center"
+                color="#FFFFFF"
+                width="3"
+                animation="property: rotation; to: 0 360 0; loop: true; dur: 4000; easing: linear">
+            </a-text>
+        </a-marker>
 
-            const supported = await navigator.xr.isSessionSupported('immersive-ar');
-            if (supported) {
-                statusEl.textContent = '✅ AR supported! Click button to start';
-                startButton.classList.remove('hidden');
-                return true;
-            } else {
-                statusEl.textContent = '❌ AR not supported on this device';
-                return false;
-            }
-        }
+        <!-- Marker 2: Kanji - Different objects -->
+        <a-marker preset="kanji">
+            <!-- Torus (donut shape) -->
+            <a-torus
+                position="0 0.5 0"
+                color="#A8E6CF"
+                radius="0.5"
+                radius-tubular="0.1"
+                animation="property: rotation; to: 360 360 0; loop: true; dur: 3000; easing: linear">
+            </a-torus>
+            
+            <!-- Cone -->
+            <a-cone
+                position="0 1.5 0"
+                color="#FFD3B6"
+                radius-bottom="0.3"
+                radius-top="0.1"
+                height="0.8"
+                animation="property: rotation; to: 0 360 0; loop: true; dur: 2000; easing: linear">
+            </a-cone>
+            
+            <!-- Text -->
+            <a-text
+                value="Kanji Marker!"
+                position="0 2.2 0"
+                align="center"
+                color="#FF8B94"
+                width="3">
+            </a-text>
+        </a-marker>
+    </a-scene>
 
-        // Initialize Three.js scene
-        function initScene() {
-            // Create scene
-            scene = new THREE.Scene();
-
-            // Create camera
-            camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
-
-            // Create renderer
-            renderer = new THREE.WebGLRenderer({ 
-                antialias: true,
-                alpha: true 
-            });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.xr.enabled = true;
-            document.getElementById('container').appendChild(renderer.domElement);
-
-            // Add light
-            const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
-            scene.add(light);
-
-            // Create reticle (indicator where object will be placed)
-            const reticleGeometry = new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2);
-            const reticleMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-            reticle = new THREE.Mesh(reticleGeometry, reticleMaterial);
-            reticle.matrixAutoUpdate = false;
-            reticle.visible = false;
-            scene.add(reticle);
-        }
-
-        // Start AR session
-        async function startAR() {
-            try {
-                statusEl.textContent = 'Starting AR session...';
-                startButton.disabled = true;
-
-                // Request AR session with hit-test feature
-                xrSession = await navigator.xr.requestSession('immersive-ar', {
-                    requiredFeatures: ['hit-test']
-                });
-
-                statusEl.textContent = '📱 AR Active - Tap screen to place cubes!';
-
-                // Set up renderer for XR
-                await renderer.xr.setSession(xrSession);
-
-                // Get reference space
-                xrRefSpace = await xrSession.requestReferenceSpace('local');
-
-                // Set up hit test source
-                const viewerSpace = await xrSession.requestReferenceSpace('viewer');
-                hitTestSource = await xrSession.requestHitTestSource({ space: viewerSpace });
-
-                // Handle session end
-                xrSession.addEventListener('end', onSessionEnd);
-
-                // Handle screen tap to place objects
-                xrSession.addEventListener('select', onSelect);
-
-                // Start render loop
-                renderer.setAnimationLoop(render);
-
-            } catch (error) {
-                statusEl.textContent = '❌ Error starting AR: ' + error.message;
-                startButton.disabled = false;
-                console.error('AR Error:', error);
-            }
-        }
-
-        // Handle tap to place cube
-        function onSelect() {
-            if (reticle.visible) {
-                // Create a colorful cube
-                const geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
-                const material = new THREE.MeshPhongMaterial({ 
-                    color: Math.random() * 0xffffff,
-                    shininess: 100
-                });
-                const cube = new THREE.Mesh(geometry, material);
-
-                // Position cube at reticle location
-                cube.position.setFromMatrixPosition(reticle.matrix);
-                cube.quaternion.setFromRotationMatrix(reticle.matrix);
-
-                // Add rotation animation
-                cube.userData.rotationSpeed = Math.random() * 0.05 + 0.01;
-
-                scene.add(cube);
-                cubes.push(cube);
-
-                statusEl.textContent = `📱 ${cubes.length} cube(s) placed! Tap to add more`;
-            }
-        }
-
-        // Render loop
-        function render(timestamp, frame) {
-            if (frame && hitTestSource) {
-                // Get hit test results
-                const hitTestResults = frame.getHitTestResults(hitTestSource);
-
-                if (hitTestResults.length > 0) {
-                    const hit = hitTestResults[0];
-                    const pose = hit.getPose(xrRefSpace);
-
-                    // Update reticle position
-                    reticle.visible = true;
-                    reticle.matrix.fromArray(pose.transform.matrix);
-                } else {
-                    reticle.visible = false;
+    <script>
+        // Hide loader after AR is ready
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                const loader = document.querySelector('.arjs-loader');
+                if (loader) {
+                    loader.style.display = 'none';
                 }
-            }
-
-            // Animate cubes
-            cubes.forEach(cube => {
-                cube.rotation.x += cube.userData.rotationSpeed;
-                cube.rotation.y += cube.userData.rotationSpeed;
-            });
-
-            // Render scene
-            renderer.render(scene, camera);
-        }
-
-        // Handle session end
-        function onSessionEnd() {
-            xrSession = null;
-            hitTestSource = null;
-            reticle.visible = false;
-            cubes = [];
-            statusEl.textContent = '✅ AR session ended. Click button to restart';
-            startButton.disabled = false;
-            startButton.classList.remove('hidden');
-        }
-
-        // Handle window resize
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+            }, 2000);
         });
 
-        // Initialize
-        initScene();
-        checkARSupport();
-        startButton.addEventListener('click', startAR);
-
+        // Log when markers are found
+        const scene = document.querySelector('a-scene');
+        const markers = document.querySelectorAll('a-marker');
+        
+        markers.forEach((marker, index) => {
+            marker.addEventListener('markerFound', () => {
+                const info = document.getElementById('info');
+                info.innerHTML = '<h3>✅ Marker Detected!</h3><p>Keep camera steady to see AR objects</p>';
+                console.log('Marker ' + (index + 1) + ' found!');
+            });
+            
+            marker.addEventListener('markerLost', () => {
+                const info = document.getElementById('info');
+                info.innerHTML = '<h3>🎯 Marker-Based AR</h3><p>Point camera at Hiro marker to see 3D objects!</p>';
+                console.log('Marker ' + (index + 1) + ' lost!');
+            });
+        });
     </script>
 </body>
 </html>
